@@ -1,0 +1,52 @@
+import requests
+
+# Ragie.ai API Configuration
+api_key = "tnt_LDE2bRyjLhs_laR8e7IveNqwl9S8itseKoXzbaqQCeMYD7kPMzkQxHM"
+list_url = "https://api.ragie.ai/documents"
+delete_url = "https://api.ragie.ai/documents/{}"
+
+deleted_count = 0
+while True:
+    # Step 1: Fetch a batch of documents
+    response = requests.get(
+        list_url,
+        headers={"Authorization": f"Bearer {api_key}"}
+    )
+
+    if response.status_code != 200:
+        print(f"Failed to fetch documents: {response.text}")
+        break
+
+    try:
+        response_data = response.json()  # Parse response as JSON
+        documents = response_data.get("documents", [])  # Extract documents list
+    except Exception as e:
+        print(f"Error parsing response: {e}")
+        print(response.text)
+        break
+
+    if not documents:
+        # No more documents to process
+        print("No more documents to delete.")
+        break
+
+    print(f"Found {len(documents)} documents in this batch. Starting deletion...")
+
+    # Step 2: Delete each document in the current batch
+    for doc in documents:
+        if isinstance(doc, dict) and 'id' in doc:  # Corrected key to 'id'
+            document_id = doc['id']
+            delete_response = requests.delete(
+                delete_url.format(document_id),
+                headers={"Authorization": f"Bearer {api_key}"}
+            )
+
+            if delete_response.status_code == 200:
+                deleted_count += 1
+                print(f"Successfully deleted document: {document_id}")
+            else:
+                print(f"Failed to delete document {document_id}: {delete_response.text}")
+        else:
+            print(f"Invalid document format: {doc}")
+
+print(f"Deletion complete. Total documents deleted: {deleted_count}")
